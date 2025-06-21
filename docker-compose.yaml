@@ -1,0 +1,18 @@
+version: "3"
+
+networks:
+  app_network:
+
+services:
+  elixir_server:
+    image: hexpm/elixir:1.18.4-erlang-27.3.3-debian-buster-20240612
+    command: tail -f /dev/null
+    container_name: elixir_server
+    environment:
+      - AWS_ACCESS_KEY_ID=minio_root_user
+      - AWS_SECRET_ACCESS_KEY=minio_root_pass
+    networks:
+      app_network:
+    restart: unless-stopped
+    volumes:
+      - "./:/wiki_data_processing"
