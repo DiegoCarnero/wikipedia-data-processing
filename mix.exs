@@ -16,9 +16,6 @@ defmodule FlowExperiment.MixProject do
   #
   # Run "mix help deps" for examples and options.
   defp deps do
-    [
-      {:mint, "~> 1.7"},
-      {:flow, "~> 1.2"},
-    ]
+    [ ]
   end
 end

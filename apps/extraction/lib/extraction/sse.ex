@@ -1,9 +1,12 @@
 defmodule Extraction.Sse do
 
-  @destination Extraction.Storage.Local
+  @destination Extraction.Storage.GenServer
 
   def stream_sse(sse_url, process_func) do
-    Req.get!(sse_url, into: process_func)
+    Req.get!(sse_url,
+             into: process_func,
+             retry: fn _request, _result -> {:delay, 1000} end
+            )
   end
 
   def process_sse({:data, data}, {req, res}) do
@@ -11,10 +14,7 @@ defmodule Extraction.Sse do
     {events, buffer} = ServerSentEvents.parse(buffer <> data)
     Req.Request.put_private(req, :sse_buffer, buffer)
     if events != [] do
-      # Process the events (e.g., send to a GenServer)
-      Enum.map(events, fn event ->
-        @destination.send(event)
-      end)
+      @destination.send(events)
     end
     {:cont, {req, res}}
   end

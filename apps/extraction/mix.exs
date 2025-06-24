@@ -30,7 +30,10 @@ defmodule Extraction.MixProject do
       # {:sibling_app_in_umbrella, in_umbrella: true}
       {:req, "~> 0.5"},
       {:server_sent_events, "~> 0.2"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:hackney, "~> 1.9"},
     ]
   end
 end
