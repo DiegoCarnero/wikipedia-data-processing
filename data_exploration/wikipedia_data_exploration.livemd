@@ -1,0 +1,25 @@
+# Wikipedia data exploration
+
+```elixir
+Mix.install([
+  {:adbc, "~> 0.7.9"},
+  {:kino_db, "~> 0.3"},
+  {:explorer, "~> 0.10.1"},
+  {:kino_explorer, "~> 0.1.24"}
+])
+```
+
+## Section
+
+```elixir
+s3_config = %FSS.S3.Config{
+  access_key_id: "minio_root_user",
+  endpoint: "http://minio:6060",
+  region: "us-east-1",
+  secret_access_key: "minio_root_pass",
+}
+
+filepath = "s3://testbucket/test_folder_2025-06-25/test_file_2025-06-24%2020_38_54.562855Z.ndjson"
+
+df = Explorer.DataFrame.from_ndjson!(filepath, config: s3_config)
+```

@@ -8,7 +8,13 @@ The data source is [Wikipedia's recent changes API](https://www.mediawiki.org/wi
 
 Manually capture data to local storage
 ```elixir
+iex> {:ok, pid} = Extraction.Storage.GenServer.start_link(%{storage: Extraction.Storage.S3, formatter: Extraction.Storage.Formatter.Json})
 iex> Extraction.Sse.stream_sse("https://stream.wikimedia.org/v2/stream/recentchange", &Extraction.Sse.process_sse/2)
+```
+
+Run livebook
+```bash
+docker run --network wikipeddia_data_processing_network -p 8080:8080 -p 8081:8081 --pull always -u $(id -u):$(id -g) -v $(pwd)/data_exploration:/data ghcr.io/livebook-dev/livebook
 ```
 
 ### Known issues

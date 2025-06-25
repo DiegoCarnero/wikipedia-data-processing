@@ -12,17 +12,17 @@ services:
       - AWS_ACCESS_KEY_ID=minio_root_user
       - AWS_SECRET_ACCESS_KEY=minio_root_pass
     networks:
-      app_network:
+      - wikipeddia_data_processing_network
     restart: unless-stopped
     volumes:
       - "./:/wiki_data_processing"
     working_dir: /wiki_data_processing
 
   minio:
-    image: minio/minio:RELEASE.2025-06-13T11-33-47Z-cpuv1
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
     container_name: minio
     networks:
-      - app_network
+      - wikipeddia_data_processing_network
     ports:
       - "6060:6060"
       - "6001:6001"
@@ -45,3 +45,7 @@ services:
 
 volumes:
   wiki-elixir-minio-data:
+
+networks:
+  wikipeddia_data_processing_network:
+    external: true
