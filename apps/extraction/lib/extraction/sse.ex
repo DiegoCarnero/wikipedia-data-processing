@@ -5,7 +5,7 @@ defmodule Extraction.Sse do
   def stream_sse(sse_url, process_func) do
     Req.get!(sse_url,
              into: process_func,
-             retry: fn _request, _result -> {:delay, 1000} end
+             retry: fn _request, _result -> {:delay, 1} end
             )
   end
 

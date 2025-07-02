@@ -64,7 +64,7 @@ defmodule Extraction.Storage.GenServer do
   def handle_cast({:add_item, item}, %{buffer: buffer, flush_count: flush_count, flush_interval_ms: flush_interval_ms, formatter: formatter, storage: storage} = state) do
     new_buffer = [item | buffer]
     if length(new_buffer) >= flush_count do
-      flush_to_storage(new_buffer, storage, formatter)
+      flush_to_storage(new_buffer, formatter, storage)
       timer = state.timer
       {:noreply, %{state | buffer: [], timer: reset_timer(timer, flush_interval_ms)}}
     else
