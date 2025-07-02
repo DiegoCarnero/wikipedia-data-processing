@@ -14,7 +14,7 @@ iex> Extraction.Sse.stream_sse("https://stream.wikimedia.org/v2/stream/recentcha
 
 Run livebook
 ```bash
-docker run --network wikipeddia_data_processing_network -p 8080:8080 -p 8081:8081 --pull always -u $(id -u):$(id -g) -v $(pwd)/data_exploration:/data ghcr.io/livebook-dev/livebook
+docker run --network wikipedia_data_processing_network -p 8080:8080 -p 8081:8081 --pull always -u $(id -u):$(id -g) -v $(pwd)/data_exploration:/data ghcr.io/livebook-dev/livebook
 ```
 
 ### Known issues
