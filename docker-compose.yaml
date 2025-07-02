@@ -1,51 +1,50 @@
 version: "3"
 
-networks:
-  app_network:
-
 services:
   elixir_server:
     image: hexpm/elixir:1.18.4-erlang-27.3.3-debian-buster-20240612
     command: tail -f /dev/null
     container_name: elixir_server
     environment:
-      - AWS_ACCESS_KEY_ID=minio_root_user
-      - AWS_SECRET_ACCESS_KEY=minio_root_pass
+      - AWS_ACCESS_KEY_ID=GKffeab7ddd6f7c5d0ef20d0ba
+      - AWS_SECRET_ACCESS_KEY=8e7d8e58faf61b87581fdd4b789aee3627ef0aa45744c8a8e888b6d74f64cb96
     networks:
-      - wikipeddia_data_processing_network
+      - wikipedia_data_processing_network
     restart: unless-stopped
     volumes:
       - "./:/wiki_data_processing"
     working_dir: /wiki_data_processing
 
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
-    container_name: minio
+  garage:
+    image: dxflrs/garage:v2.0.0
+    container_name: garage
     networks:
-      - wikipeddia_data_processing_network
-    ports:
-      - "6060:6060"
-      - "6001:6001"
+      - wikipedia_data_processing_network
+    restart: unless-stopped
     volumes:
-      - wiki-elixir-minio-data:/data
+      - ./garage/garage.toml:/etc/garage.toml
+      - wiki-elixir-garage-data:/var/lib/garage
+
+  garage-webui:
+    image: khairul169/garage-webui:latest
+    container_name: garage-webui
+    depends_on:
+      garage:
+        condition: service_started
+    networks:
+      - wikipedia_data_processing_network
+    restart: unless-stopped
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+    ports:
+      - 3909:3909
     environment:
-      - MINIO_ROOT_USER=minio_root_user
-      - MINIO_ROOT_PASSWORD=minio_root_pass
-    command: server --address 0.0.0.0:6060 --console-address ":6001" /data
-    restart: always
-    logging:
-      driver: "local"
-      options:
-        max-size: 10m
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6060/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
 
 volumes:
-  wiki-elixir-minio-data:
+  wiki-elixir-garage-data:
 
 networks:
-  wikipeddia_data_processing_network:
+  wikipedia_data_processing_network:
     external: true
