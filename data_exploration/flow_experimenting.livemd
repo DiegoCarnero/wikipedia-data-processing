@@ -1,24 +1,46 @@
-# Wikipedia data exploration
-
-```elixir
-Mix.install([
-  {:adbc, "~> 0.7.9"},
-  {:kino_db, "~> 0.3"},
-  {:explorer, "~> 0.10.1"},
-  {:kino_explorer, "~> 0.1.24"},
-  {:jason, "~> 1.4.4"},
-  {:ex_aws, "~> 2.5"},
-  {:ex_aws_s3, "~> 2.5"},
-  {:hackney, "~> 1.9"},
-  {:sweet_xml, "~> 0.7.5"}
-])
-```
+# Flow pruebita
 
 ## Section
 
 ```elixir
+Mix.install([
+  {:flow, "~> 1.2.4"},
+  {:ex_aws, "~> 2.5"},
+  {:ex_aws_s3, "~> 2.5"},
+  {:hackney, "~> 1.9"},
+  {:sweet_xml, "~> 0.7.5"},
+  {:jason, "~> 1.4.4"},
+  {:adbc, "~> 0.7.9"},
+  {:kino_db, "~> 0.3"},
+  {:explorer, "~> 0.10.1"},
+  {:kino_explorer, "~> 0.1.24"},
+])
+```
+
+```elixir
 defmodule Utils do
   @window_size_secs 300
+
+  def list_ndjson_files(bucket, prefix, auth) do
+    ExAws.S3.list_objects_v2(bucket, prefix: prefix)
+    |> ExAws.request!(auth)
+    |> get_in([:body, :contents])
+    |> Enum.map(& &1[:key])
+    |> Enum.filter(&String.ends_with?(&1, ".ndjson"))
+  end
+
+  def load_ndjson_file(bucket, key, auth) do
+    ExAws.S3.get_object(bucket, key)
+    |> ExAws.request!(auth)
+    |> Map.get(:body)
+    |> String.split("\n", trim: true)
+    |> Enum.map(&Jason.decode!/1)
+  end
+
+  def load_all_ndjson(bucket, prefix, auth) do
+    list_ndjson_files(bucket, prefix, auth)
+    |> Enum.flat_map(fn key -> Enum.to_list(load_ndjson_file(bucket, key, auth)) end)
+  end
   
   def round_down_epoch_to_5_min(timestamp) when is_integer(timestamp) do
     (timestamp |> div(@window_size_secs)) * @window_size_secs
@@ -150,18 +172,14 @@ end
 ```
 
 ```elixir
-s3_config = %FSS.S3.Config{
-  access_key_id: "GK21f88119e76b969d6a1ae052",
-  endpoint: "http://garage:3900",
-  region: "garage",
-  secret_access_key: "abf070f8d57bc050c4c2bcc3fba6cc70028441ade9c5fc6d87d9a7b5f9949eff",
-}
+access_key_id = "GK21f88119e76b969d6a1ae052"
+secret_access_key = "abf070f8d57bc050c4c2bcc3fba6cc70028441ade9c5fc6d87d9a7b5f9949eff"
 ```
 
 ```elixir
 auth_config = [
-  access_key_id: "GK21f88119e76b969d6a1ae052",
-  secret_access_key: "abf070f8d57bc050c4c2bcc3fba6cc70028441ade9c5fc6d87d9a7b5f9949eff",
+  access_key_id: access_key_id,
+  secret_access_key: secret_access_key,
   region: "garage",
   scheme: "http",
   host: "garage",
@@ -170,54 +188,83 @@ auth_config = [
 ```
 
 ```elixir
-source_df = Utils.from_multiple_ndjson(s3_config, auth_config, "testbucket", "test_folder_2025-07-03/test_file_2025-07-0")
-
+s3_config = %FSS.S3.Config{
+  access_key_id: access_key_id,
+  endpoint: "http://garage:3900",
+  region: "garage",
+  secret_access_key: secret_access_key,
+}
 ```
 
 ```elixir
-# https://github.com/pola-rs/polars/issues/10047
-
-data_df = 
-  source_df
-|> Explorer.DataFrame.pull("data")
-|> Explorer.Series.to_list()
-|> Enum.map(&Jason.decode!/1)
-|> Utils.mixed_field_maps_to_df
+data = 
+ Utils.load_all_ndjson("testbucket", "test_folder_2025", auth_config)
 ```
 
 ```elixir
-data_df
-|> Explorer.DataFrame.frequencies([:wiki])
+test_sample_data_maps = 
+  data
+  |> Utils.mixed_field_maps_to_df
+  |> Explorer.DataFrame.sample(100)
+  |> Explorer.DataFrame.pull("data")
+  |> Explorer.Series.to_list()
+  |> Enum.map(&Jason.decode!/1)
 ```
 
 ```elixir
-data_df
-|> Explorer.DataFrame.frequencies([:bot])
+test_sample_data_df = 
+  test_sample_data_maps
+  |> Utils.mixed_field_maps_to_df
 ```
 
 ```elixir
-data_df
-|> Explorer.DataFrame.frequencies([:log_type])
+
+# require Explorer.DataFrame
+# require Explorer.Series
+
+# timestamps = 
+#   test_sample_data_df
+#   |> Explorer.DataFrame.sort_by(timestamp)
+#   |> (&Explorer.Series.to_list(&1["timestamp"])).()
+#   |> Enum.map(fn
+#       nil -> 0
+#       x -> x
+#     end)
+
+# sorted = Enum.sort(timestamps)
+
+# # Group
+# grouped =
+#   Enum.reduce(sorted, [[]], fn x, acc  ->
+#     pass = List.last(acc)
+#     ref = List.first(pass, x)
+#     new_acc = if x > ref + 300 do
+#       Enum.reverse([ [x] | Enum.reverse(acc) ])
+#     else
+#       [tail | head] = Enum.reverse(acc)
+#       new_tail = Enum.reverse([ x | Enum.reverse(tail) ])
+#       Enum.reverse([ new_tail | head ])
+#     end
+#     new_acc
+#   end)
+
+# # Interval
+# intervals =
+#   Enum.map(grouped, fn
+#     [] -> []
+#     [h | _t] = sublist -> List.duplicate(h, length(sublist))
+#   end)
+
+# # Flatten
+# result = List.flatten(intervals)
 ```
 
 ```elixir
-data_df
-|> Explorer.DataFrame.frequencies([:type])
-```
+# require Explorer.DataFrame
+# require Explorer.Series
 
-```elixir
-data_df
-|> Explorer.DataFrame.group_by([:wiki])
-|> Explorer.DataFrame.frequencies([:bot])
-```
-
-```elixir
-require Explorer.DataFrame
-
-data_df
-|> Explorer.DataFrame.mutate_with(&[interval: Utils.round_down_epoch_ExplorerSeries(&1["timestamp"])])
-|> Explorer.DataFrame.group_by([:wiki, :interval])
-|> Explorer.DataFrame.mutate(count: count(b))
+# sorted_df = Explorer.DataFrame.sort_with(test_sample_data_df, &[asc: &1["timestamp"]], nils: :first)
+# sorted_df[["timestamp", "wiki"]]
 ```
 
 ```elixir
@@ -225,14 +272,84 @@ require Explorer.DataFrame
 require Explorer.Series
 
 grouped =
-  Explorer.Series.to_list(data_df["timestamp"])
+  test_sample_data_df
+  |> (&Explorer.Series.to_list(&1["timestamp"])).()
   |> Enum.map(fn
-    nil -> 0
-    x -> x
-  end)
+      nil -> 0
+      x -> x
+    end)
   |> Utils.round_down_epoch_list()
   |> Explorer.Series.from_list()
-  |> (&Explorer.DataFrame.put(data_df, "interval", &1)).()
+  |> (&Explorer.DataFrame.put(test_sample_data_df, "interval", &1)).()
   |> Explorer.DataFrame.group_by([:interval, :wiki])
+  |> Explorer.DataFrame.group_by([:wiki])
   |> Explorer.DataFrame.summarise(total: count(interval))
+  |> Explorer.DataFrame.rename(total: "n_elems")
+  |> Explorer.DataFrame.sort_with(&[asc: &1["interval"]], nils: :first)
+```
+
+```elixir
+window = 
+  Flow.Window.fixed(5, :minute, fn %{"timestamp" => timestamp} -> timestamp * 1000 end)
+  |> Flow.Window.allowed_lateness(1, :minute)
+
+flow_result =
+  test_sample_data_maps
+  |> Enum.sort_by(&Map.get(&1, "timestamp"))
+  |> Flow.from_enumerable()
+  |> Flow.filter(fn map ->
+        Map.has_key?(map, "wiki")
+    end)
+  |> Flow.partition(window: window, key: {:key, "wiki"})
+  |> Flow.group_by(& &1["wiki"])
+  |> Flow.on_trigger(fn acc, _partition_info, {_type, window, trigger} ->
+      if trigger == :done do
+          results = 
+            Enum.map(acc, fn {key, events} ->
+                timestamps = get_in(events, [Access.all(), "timestamp"])
+                %{wiki: key, 
+                  n_elems: Enum.count(events),
+                  window: trunc(window / 1000),
+                  timestamps: Enum.sort(timestamps)
+                }
+              end)
+          {results, acc}
+      else
+          {[], acc}
+      end
+    end)
+  |> Flow.stream(link: false)
+  |> Enum.to_list
+  |> Enum.sort_by(&Map.get(&1, :n_elems), :desc)
+  |> Explorer.DataFrame.new
+  |> Explorer.DataFrame.rename(window: "interval")
+  |> Explorer.DataFrame.select(["interval", "wiki", "n_elems"])
+  |> Explorer.DataFrame.sort_with(&[asc: &1["interval"]], nils: :first)
+```
+
+```elixir
+ndjson = 
+  test_sample_data_df
+  |> Explorer.DataFrame.dump_ndjson!()
+
+ExAws.S3.put_object("testbucket", "test_data/test_src_data.ndjson", ndjson, content_type: "application/x-ndjson")
+|> ExAws.request(auth_config)
+```
+
+```elixir
+ndjson = 
+  grouped
+  |> Explorer.DataFrame.dump_ndjson!()
+
+ExAws.S3.put_object("testbucket", "test_data/test_ref.ndjson", ndjson, content_type: "application/x-ndjson")
+|> ExAws.request(auth_config)
+```
+
+```elixir
+ndjson = 
+  flow_result
+  |> Explorer.DataFrame.dump_ndjson!()
+
+ExAws.S3.put_object("testbucket", "test_data/test_result.ndjson", ndjson, content_type: "application/x-ndjson")
+|> ExAws.request(auth_config)
 ```
