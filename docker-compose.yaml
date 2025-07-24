@@ -6,8 +6,8 @@ services:
     command: tail -f /dev/null
     container_name: elixir_server
     environment:
-      - AWS_ACCESS_KEY_ID=GKffeab7ddd6f7c5d0ef20d0ba
-      - AWS_SECRET_ACCESS_KEY=8e7d8e58faf61b87581fdd4b789aee3627ef0aa45744c8a8e888b6d74f64cb96
+      - AWS_ACCESS_KEY_ID=GK21f88119e76b969d6a1ae052
+      - AWS_SECRET_ACCESS_KEY=abf070f8d57bc050c4c2bcc3fba6cc70028441ade9c5fc6d87d9a7b5f9949eff
     networks:
       - wikipedia_data_processing_network
     restart: unless-stopped

@@ -17,6 +17,17 @@ Run livebook
 docker run --network wikipedia_data_processing_network -p 8080:8080 -p 8081:8081 --pull always -u $(id -u):$(id -g) -v $(pwd)/data_exploration:/data ghcr.io/livebook-dev/livebook
 ```
 
+Garage
+```
+node_id=$(docker exec -ti garage /garage status | awk 'END {print $1}')
+docker exec -it garage /garage layout assign -z dc1 -c 1G $node_id
+docker exec -it garage /garage layout apply --version 1
+docker exec -it garage /garage bucket create testbucket
+docker exec -it garage /garage key create testbucket_key
+docker exec -it garage /garage bucket allow --read --write --owner testbucket --key testbucket_key
+```
+
+
 ### Known issues
 
 Connection gets dropped reliably every 15 minutes until Req runs out of retries.
