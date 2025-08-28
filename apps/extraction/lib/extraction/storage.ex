@@ -1,7 +1,7 @@
 
 defmodule Extraction.Storage.Local do
 
-  def send(data) do
+  def write(data) do
     file = File.open("/data/output_test.bin", [:append, :binary])
     IO.binwrite(file, data)
     File.close(file)
@@ -11,7 +11,7 @@ end
 
 defmodule Extraction.Storage.S3 do
 
-  def send(data) do
+  def write(data) do
     ExAws.S3.put_object("testbucket", ~s/test_folder_#{Date.utc_today}\/test_file_#{DateTime.utc_now}.ndjson/, data)
     |> ExAws.request!
   end
@@ -31,6 +31,25 @@ defmodule Extraction.Storage.Formatter.Json do
   def encode_multiple!(list) do
     list
     |> Enum.map(&Jason.encode!/1)
+    |> Enum.join("\n")
+  end
+
+end
+
+defmodule Extraction.Storage.Formatter.Plain do
+
+  def encode(data) do
+    to_string(data)
+  end
+
+  def encode!(data) do
+    to_string(data)
+  end
+
+  def encode_multiple!(list) do
+    [ list, "" ]
+    |> List.flatten
+    |> Enum.map(&to_string/1)
     |> Enum.join("\n")
   end
 
@@ -96,8 +115,11 @@ defmodule Extraction.Storage.GenServer do
   end
 
   defp flush_to_storage(items, formatter, storage) do
-    data = formatter.encode_multiple!(items)
-    storage.send(data)
+    data =
+      items
+       |> Enum.reverse
+       |> formatter.encode_multiple!
+    storage.write(data)
     :ok
   end
 end

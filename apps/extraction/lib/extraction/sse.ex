@@ -20,3 +20,19 @@ defmodule Extraction.Sse do
   end
 
 end
+
+defmodule Extraction.Sse.GenServer do
+  use GenServer
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  def init(args) do
+    {:ok, args, {:continue, :stream}}
+  end
+
+  def handle_continue(:stream, _args) do
+    Extraction.Sse.stream_sse("https://stream.wikimedia.org/v2/stream/recentchange", &Extraction.Sse.process_sse/2)
+  end
+end
