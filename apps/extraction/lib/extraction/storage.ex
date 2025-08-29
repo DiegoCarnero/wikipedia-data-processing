@@ -58,8 +58,8 @@ end
 defmodule Extraction.Storage.GenServer do
   use GenServer
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(%{ name: name } = opts) do
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   def add_item(item) do

@@ -4,6 +4,23 @@ Personal project to get familiar with, apply and evalutate Elixir libraries for 
 
 The data source is [Wikipedia's recent changes API](https://www.mediawiki.org/wiki/API:RecentChanges).
 
+### Topology
+
+```mermaid
+flowchart LR
+    A[Extractor]
+    B[Storage]
+    C[Flow producer]
+    D[Flow stream]
+    E[Broadcaster]
+    F("Encoder")
+    B --> F
+    A --> E --> |Raw| B
+    E --> C
+    C --> D
+    D --> |Aggregated| B
+```
+
 ### Commands
 
 Manually capture data to local storage
