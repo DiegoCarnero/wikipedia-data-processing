@@ -25,6 +25,11 @@ defmodule Pipeline.MixProject do
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
-    [ ]
+    [
+      {:gen_stage, "~> 1.3.2"},
+      {:flow, "~> 1.2.4"},
+      {:extraction, in_umbrella: true},
+      {:transformations, in_umbrella: true},
+    ]
   end
 end

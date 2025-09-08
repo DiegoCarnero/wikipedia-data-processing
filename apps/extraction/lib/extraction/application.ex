@@ -8,7 +8,7 @@ defmodule Extraction.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Extraction.Storage.GenServer, %{storage: Extraction.Storage.S3, formatter: Extraction.Storage.Formatter.Json}},
+      {Extraction.Storage.GenServer, %{storage: Extraction.Storage.Local, formatter: Extraction.Storage.Formatter.Json, path_prefix: "/tmp/extraction_test", flush_interval_ms: 1000, name: :test_extractions}},
       {Extraction.Sse.GenServer, []},
     ]
 

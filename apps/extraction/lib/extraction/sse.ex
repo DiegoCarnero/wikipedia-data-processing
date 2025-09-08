@@ -1,7 +1,5 @@
 defmodule Extraction.Sse do
 
-  @destination Extraction.Storage.GenServer
-
   def stream_sse(sse_url, process_func) do
     Req.get!(sse_url,
              into: process_func,
@@ -14,7 +12,7 @@ defmodule Extraction.Sse do
     {events, buffer} = ServerSentEvents.parse(buffer <> data)
     Req.Request.put_private(req, :sse_buffer, buffer)
     if events != [] do
-      @destination.send(events)
+      send(:broadcaster, events)
     end
     {:cont, {req, res}}
   end

@@ -15,22 +15,40 @@ defmodule Pipeline.Stages.Broadcaster do
     end
   end
 
-  def handle_demand(new_demand, state) do
+  defp get_events_to_emit_and_next_state(state) do
     pending_demand = state.pending_demand
-    to_take = pending_demand + new_demand
-    {to_emit, remaining} = Enum.split(state.buffer, to_take)
+    {to_emit, remaining} = Enum.split(state.buffer, pending_demand)
 
     next_state =
       state
-      |> Map.put(:pending_demand, to_take - length(to_emit))
       |> Map.put(:buffer, remaining)
+
+    {to_emit, next_state}
+  end
+
+  def handle_demand(new_demand, state) do
+    pending_demand = state.pending_demand
+    demand = pending_demand + new_demand
+    state = %{ state | pending_demand: demand}
+    {to_emit, next_state} = get_events_to_emit_and_next_state(state)
 
     {:noreply, to_emit, next_state}
   end
 
-  def handle_info(new_events, old_state) do
+  def handle_info(new_events, %{ pending_demand: 0 } = old_state) do
     buffer = old_state.buffer
     new_state = %{ old_state | buffer: buffer ++ new_events}
     {:noreply, [], new_state}
+  end
+
+  def handle_info(new_events, %{ pending_demand: pending_demand } = old_state) do
+    buffer = old_state.buffer
+    new_state = %{ old_state | buffer: buffer ++ new_events}
+    {to_emit, next_state} = get_events_to_emit_and_next_state(new_state)
+    next_state =
+      next_state
+      |> Map.put(:pending_demand, pending_demand - length(to_emit))
+
+    {:noreply, to_emit, next_state}
   end
 end

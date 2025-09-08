@@ -34,6 +34,7 @@ defmodule Extraction.MixProject do
       {:ex_aws, "~> 2.5"},
       {:ex_aws_s3, "~> 2.5"},
       {:hackney, "~> 1.9"},
+      {:gen_stage, "~> 1.3.2"}
     ]
   end
 end
