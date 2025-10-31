@@ -64,3 +64,22 @@ Connection gets dropped reliably every 15 minutes until Req runs out of retries.
     (req 0.5.10) lib/req.ex:1121: Req.request!/2
     iex:1: (file)
 ```
+
+---
+
+Ocasionally the data received can't be parsed by `ServerSentEvents.parse_field/2`.
+
+```elixir
+22:05:45.310 [error] GenServer Extraction.Sse.GenServer terminating
+** (FunctionClauseError) no function clause matching in ServerSentEvents.parse_field/2
+    (server_sent_events 0.2.1) lib/server_sent_events.ex:100: ServerSentEvents.parse_field(<<130, 208, 184, 58, 208, 161, 209, 130, 208, 176, 209, 130, 208, 184, 209, 129, 209, 130, 208, 184, 208, 186, 208, 176, 32, 209, 129, 209, 130, 209, 128, 208, 176, 208, 189, 208, 184, 209, 134, 47, 208, 154, 208, 190, 208, 188, 208, 188, 208, 181, ...>>, [])
+    (server_sent_events 0.2.1) lib/server_sent_events.ex:68: ServerSentEvents.parse_event/2
+    (server_sent_events 0.2.1) lib/server_sent_events.ex:40: ServerSentEvents.parse/2
+    (extraction 0.1.0) lib/extraction/sse.ex:12: Extraction.Sse.process_sse/2
+    (finch 0.19.0) lib/finch/http1/conn.ex:346: Finch.HTTP1.Conn.receive_response/8
+    (finch 0.19.0) lib/finch/http1/conn.ex:131: Finch.HTTP1.Conn.request/8
+    (finch 0.19.0) lib/finch/http1/pool.ex:60: anonymous fn/10 in Finch.HTTP1.Pool.request/6
+    (nimble_pool 1.1.0) lib/nimble_pool.ex:462: NimblePool.checkout!/4
+Last message: {:continue, :stream}
+State: []
+```
