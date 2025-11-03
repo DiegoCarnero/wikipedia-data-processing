@@ -38,7 +38,6 @@ defmodule BroadcasterTest do
     assert_receive {^fwd_2_pid, [6, 7, 8, 9, 10]}
     assert_receive {^fwd_1_pid, [11]}
     assert_receive {^fwd_2_pid, [11]}
-    Process.sleep(10)
     assert %{state: %{pending_demand: 9}} = :sys.get_state(bc_pid)
     # clean
     Process.unlink(fwd_1_pid)
