@@ -40,10 +40,18 @@ node_id=$(docker exec -ti garage /garage status | awk 'END {print $1}')
 docker exec -it garage /garage layout assign -z dc1 -c 1G $node_id
 docker exec -it garage /garage layout apply --version 1
 docker exec -it garage /garage bucket create testbucket
-docker exec -it garage /garage key create testbucket_key
+mapfile -t lines < <(docker exec -it garage /garage key create testbucket_key | awk 'NR==4 || NR==6 { print $3 }')
+key_id=${lines[0]}
+secret_key=${lines[1]}
 docker exec -it garage /garage bucket allow --read --write --owner testbucket --key testbucket_key
+echo "export AWS_ACCESS_KEY_ID=$key_id"
+echo "export AWS_SECRET_ACCESS_KEY=$secret_key"
 ```
 
+Load environment without starting app
+```bash
+iex -S mix run --no-start
+```
 
 ### Known issues
 
