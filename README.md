@@ -1,4 +1,4 @@
-# Wikipedia data processing
+# Elixir data processing
 
 Personal project to get familiar with, apply and evalutate Elixir libraries for Data Engineering tasks.
 
