@@ -42,12 +42,12 @@ defmodule Pipeline.Stages.Broadcaster do
 
   def handle_info(event, state), do: handle_events([event], self(), state)
 
+  @doc """
+  Called only when running as producer-consumer.
+  We ignore demand.
+  """
   def handle_events(new_events, _from, state) do
-    buffer = state.buffer
-    new_state = %{state | buffer: buffer ++ new_events}
-    {to_emit, next_state} = get_events_to_emit_and_next_state(new_state)
-
-    {:noreply, to_emit, next_state}
+    {:noreply, new_events, state}
   end
 
 end
