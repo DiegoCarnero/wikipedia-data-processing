@@ -212,6 +212,13 @@ defmodule Extraction.Storage.GenStage do
     {:noreply, [], state}
   end
 
+  def handle_info(:flush, %{buffer: buffer, flush_interval_ms: flush_interval_ms, storage: storage, formatter: formatter, path_prefix: path_prefix, file_ext: file_ext} = state) do
+    unless buffer == [] do
+      flush_to_storage(buffer, formatter, storage, path_prefix, file_ext)
+    end
+    {:noreply, [],  %{state | buffer: [], timer: schedule_flush(flush_interval_ms)}}
+  end
+
   def handle_cast({:add_item, item}, %{buffer: buffer, flush_count: flush_count, flush_interval_ms: flush_interval_ms, formatter: formatter, storage: storage, path_prefix: path_prefix, file_ext: file_ext} = state) do
     new_buffer = [item | buffer]
     if length(new_buffer) >= flush_count do
@@ -221,13 +228,6 @@ defmodule Extraction.Storage.GenStage do
     else
       {:noreply, [], %{state | buffer: new_buffer}}
     end
-  end
-
-  def handle_info(:flush, %{buffer: buffer, flush_interval_ms: flush_interval_ms, storage: storage, formatter: formatter, path_prefix: path_prefix, file_ext: file_ext} = state) do
-    unless buffer == [] do
-      flush_to_storage(buffer, formatter, storage, path_prefix, file_ext)
-    end
-    {:noreply, [],  %{state | buffer: [], timer: schedule_flush(flush_interval_ms)}}
   end
 
   defp schedule_flush(flush_interval_ms) do
